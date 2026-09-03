@@ -2,7 +2,6 @@ name: Android APK Yaratish (CI/CD)
 
 on:
   push:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -18,25 +17,43 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       - name: Flutter SDK o'rnatish
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.x'
           channel: 'stable'
-          cache: true
 
-      - name: Kutubxonalarni yuklash (flutter pub get)
-        working-directory: mobile_app
-        run: flutter pub get
+      - name: Loyihani sozlash va APK yig'ish
+        run: |
+          # 1. mobile_app yoki asosiy papkani topish
+          TARGET_DIR="."
+          if [ -d "mobile_app" ]; then
+            TARGET_DIR="mobile_app"
+          elif [ -f "pubspec.yaml" ]; then
+            TARGET_DIR="."
+          fi
+          cd "$TARGET_DIR"
+          echo "Ishchi papka: $(pwd)"
 
-      - name: Release APK yig'ish (flutter build apk)
-        working-directory: mobile_app
-        run: flutter build apk --release
+          # 2. Android platformasi va Gradle wrapperini avtomatik to'liq sozlash
+          flutter create --org com.agrostar --platforms android .
+
+          # 3. AndroidManifest.xml ga Kamera va GPS ruxsatlarini qo'shish
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST" ]; then
+            sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>' "$MANIFEST"
+            sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
+          fi
+
+          # 4. Paketlarni yuklash
+          flutter pub get
+
+          # 5. Release APK yig'ish
+          flutter build apk --release --no-tree-shake-icons
 
       - name: Tayyor APK faylini yuklab olish uchun saqlash (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: agrostar-davomat-release-apk
-          path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
+          path: "**/build/app/outputs/flutter-apk/app-release.apk"
