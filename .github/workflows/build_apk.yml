@@ -26,14 +26,14 @@ jobs:
 
       - name: Loyihani ochish va APK yig'ish
         run: |
-          # 1. Agar mobile_app.zip arxivi yuklangan bo'lsa, uni avtomatik ochish
+          # 1. Agar mobile_app.zip bo'lsa, ochamiz
           if [ -f "mobile_app.zip" ]; then
-            echo "mobile_app.zip topildi, ochilmoqda..."
+            echo "mobile_app.zip ochilmoqda..."
             mkdir -p mobile_app
             unzip -o mobile_app.zip -d mobile_app
           fi
 
-          # 2. Ishchi papkani aniqlash
+          # 2. Ishchi papkaga o'tamiz
           TARGET_DIR="."
           if [ -d "mobile_app" ] && [ -f "mobile_app/pubspec.yaml" ]; then
             TARGET_DIR="mobile_app"
@@ -45,18 +45,28 @@ jobs:
           cd "$TARGET_DIR"
           echo "Ishchi papka: $(pwd)"
 
-          # 3. Android platformasini yaratish
+          # 3. Android platformasini Flutter 3.24 talabiga ko'ra yangidan yaratish
+          rm -rf android
           flutter create --org com.agrostar --platforms android .
 
-          # 4. AndroidManifest.xml ga ruxsatlarni qo'shish
+          # 4. Android ruxsatlarini manifestga kiritamiz
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
             sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>' "$MANIFEST"
             sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
           fi
 
-          # 5. Paketlarni yuklash va APK yig'ish
+          # 5. minSdkVersion ni kamida 21 qilish (Kamera va GPS ishlashi uchun)
+          APP_GRADLE="android/app/build.gradle"
+          if [ -f "$APP_GRADLE" ]; then
+            sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' "$APP_GRADLE"
+            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' "$APP_GRADLE"
+          fi
+
+          # 6. Paketlarni yuklash
           flutter pub get
+
+          # 7. APK yig'ish
           flutter build apk --release --no-tree-shake-icons
 
       - name: Tayyor APK faylini yuklab olish uchun saqlash (Artifact)
