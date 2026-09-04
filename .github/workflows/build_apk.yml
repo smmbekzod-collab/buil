@@ -49,22 +49,7 @@ jobs:
           rm -rf android
           flutter create --org com.agrostar --platforms android .
 
-          # 4. Barcha plaginlar uchun compileSdkVersion 35 ni majburiy sozlash
-          cat << 'EOF' >> android/build.gradle
-
-          subprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
-                      project.android {
-                          compileSdkVersion 35
-                          buildToolsVersion "35.0.0"
-                      }
-                  }
-              }
-          }
-          EOF
-
-          # 5. android/app/build.gradle sozlamalarini yangilash (compileSdk 35, minSdk 21)
+          # 4. android/app/build.gradle sozlamalarini yangilash (compileSdk 35, minSdk 21)
           APP_GRADLE="android/app/build.gradle"
           if [ -f "$APP_GRADLE" ]; then
             sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' "$APP_GRADLE"
@@ -72,17 +57,17 @@ jobs:
             sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' "$APP_GRADLE"
           fi
 
-          # 6. AndroidManifest.xml ga Kamera va GPS ruxsatlarini kiritish
+          # 5. AndroidManifest.xml ga Kamera va GPS ruxsatlarini kiritish
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
             sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>' "$MANIFEST"
             sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
           fi
 
-          # 7. Paketlarni Flutter 3.24 bilan moslashtirish (geolocator va permission plaginlarini yangilash)
+          # 6. Paketlarni yangilash
           flutter pub upgrade --major-versions || flutter pub get
 
-          # 8. Release APK yig'ish
+          # 7. Release APK yig'ish
           flutter build apk --release --no-tree-shake-icons
 
       - name: Tayyor APK faylini yuklab olish uchun saqlash (Artifact)
