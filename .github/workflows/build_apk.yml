@@ -24,13 +24,40 @@ jobs:
           flutter-version: '3.24.x'
           channel: 'stable'
 
-      - name: Mobile app papkasiga o'tish va APK yig'ish
+      - name: Loyihani ochish va APK yig'ish
         run: |
-          if [ -d "mobile_app" ]; then
-            cd mobile_app
+          # 1. Agar mobile_app.zip arxivi yuklangan bo'lsa, uni avtomatik ochish
+          if [ -f "mobile_app.zip" ]; then
+            echo "mobile_app.zip topildi, ochilmoqda..."
+            mkdir -p mobile_app
+            unzip -o mobile_app.zip -d mobile_app
           fi
+
+          # 2. Ishchi papkani aniqlash
+          TARGET_DIR="."
+          if [ -d "mobile_app" ] && [ -f "mobile_app/pubspec.yaml" ]; then
+            TARGET_DIR="mobile_app"
+          elif [ -d "mobile_app" ] && [ -f "mobile_app/mobile_app/pubspec.yaml" ]; then
+            TARGET_DIR="mobile_app/mobile_app"
+          elif [ -f "pubspec.yaml" ]; then
+            TARGET_DIR="."
+          fi
+          cd "$TARGET_DIR"
+          echo "Ishchi papka: $(pwd)"
+
+          # 3. Android platformasini yaratish
+          flutter create --org com.agrostar --platforms android .
+
+          # 4. AndroidManifest.xml ga ruxsatlarni qo'shish
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST" ]; then
+            sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>' "$MANIFEST"
+            sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
+          fi
+
+          # 5. Paketlarni yuklash va APK yig'ish
           flutter pub get
-          flutter build apk --release
+          flutter build apk --release --no-tree-shake-icons
 
       - name: Tayyor APK faylini yuklab olish uchun saqlash (Artifact)
         uses: actions/upload-artifact@v4
