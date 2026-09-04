@@ -49,23 +49,33 @@ jobs:
           rm -rf android
           flutter create --org com.agrostar --platforms android .
 
-          # 4. AndroidManifest.xml ga Kamera va GPS ruxsatlarini kiritish
+          # 4. Kotlin versiyasini 1.9.0 ga yangilash
+          SETTINGS="android/settings.gradle"
+          if [ -f "$SETTINGS" ]; then
+            sed -i 's/"org.jetbrains.kotlin.android" version "[^"]*"/"org.jetbrains.kotlin.android" version "1.9.0"/' "$SETTINGS"
+          fi
+          BUILD_GRADLE="android/build.gradle"
+          if [ -f "$BUILD_GRADLE" ]; then
+            sed -i "s/ext.kotlin_version = '[^']*'/ext.kotlin_version = '1.9.0'/" "$BUILD_GRADLE"
+          fi
+
+          # 5. AndroidManifest.xml ga Kamera va GPS ruxsatlarini kiritish
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
             sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>' "$MANIFEST"
             sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
           fi
 
-          # 5. minSdkVersion ni 21 qilish (Kamera va Geolocator talabi)
+          # 6. minSdkVersion ni 21 qilish (Kamera va Geolocator talabi)
           APP_GRADLE="android/app/build.gradle"
           if [ -f "$APP_GRADLE" ]; then
             sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' "$APP_GRADLE"
           fi
 
-          # 6. Flutter 3.22 uchun mos, barqaror kamera versiyasini belgilash (Camera2)
+          # 7. Flutter 3.22 uchun mos, barqaror kamera versiyasini belgilash (Camera2)
           sed -i 's/camera: .*/camera: 0.10.5+9/g' pubspec.yaml
 
-          # 7. Paketlarni yuklash va APK yig'ish
+          # 8. Paketlarni yuklash va APK yig'ish
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
