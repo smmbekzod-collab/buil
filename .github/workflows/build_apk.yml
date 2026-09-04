@@ -18,10 +18,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Flutter SDK o'rnatish
+      - name: Barqaror Flutter 3.22 SDK o'rnatish
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.x'
+          flutter-version: '3.22.x'
           channel: 'stable'
 
       - name: Loyihani ochish va APK yig'ish
@@ -45,29 +45,25 @@ jobs:
           cd "$TARGET_DIR"
           echo "Ishchi papka: $(pwd)"
 
-          # 3. Android platformasini yaratish
+          # 3. Barqaror Android platformasini yaratish
           rm -rf android
           flutter create --org com.agrostar --platforms android .
 
-          # 4. android/app/build.gradle sozlamalarini yangilash (compileSdk 35, minSdk 21)
-          APP_GRADLE="android/app/build.gradle"
-          if [ -f "$APP_GRADLE" ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' "$APP_GRADLE"
-            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/g' "$APP_GRADLE"
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' "$APP_GRADLE"
-          fi
-
-          # 5. AndroidManifest.xml ga Kamera va GPS ruxsatlarini kiritish
+          # 4. AndroidManifest.xml ga Kamera va GPS ruxsatlarini kiritish
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
             sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>' "$MANIFEST"
             sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
           fi
 
-          # 6. Paketlarni yangilash
-          flutter pub upgrade --major-versions || flutter pub get
+          # 5. minSdkVersion ni 21 qilish (Kamera va Geolocator talabi)
+          APP_GRADLE="android/app/build.gradle"
+          if [ -f "$APP_GRADLE" ]; then
+            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' "$APP_GRADLE"
+          fi
 
-          # 7. Release APK yig'ish
+          # 6. Paketlarni yuklash va APK yig'ish
+          flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
       - name: Tayyor APK faylini yuklab olish uchun saqlash (Artifact)
