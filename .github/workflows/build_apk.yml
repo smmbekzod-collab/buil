@@ -62,7 +62,10 @@ jobs:
             sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' "$APP_GRADLE"
           fi
 
-          # 6. Paketlarni yuklash va APK yig'ish
+          # 6. Flutter 3.22 uchun mos, barqaror kamera versiyasini belgilash (Camera2)
+          sed -i 's/camera: .*/camera: 0.10.5+9/g' pubspec.yaml
+
+          # 7. Paketlarni yuklash va APK yig'ish
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
