@@ -6,6 +6,7 @@ on:
       - 'astel-guard/source.tar.xz.b64'
       - 'astel-guard/prepare_safe_apk.py'
       - 'astel-guard/add_restrictions.py'
+      - 'astel-guard/add_all_apps_restrictions.py'
       - '.github/workflows/astel-guard.yml'
   workflow_dispatch:
 permissions:
@@ -26,6 +27,8 @@ jobs:
         run: python3 astel-guard/prepare_safe_apk.py
       - name: Add permission-restriction controls
         run: python3 astel-guard/add_restrictions.py
+      - name: Add direct restriction button to every installed app
+        run: python3 astel-guard/add_all_apps_restrictions.py
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
