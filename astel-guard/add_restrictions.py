@@ -53,13 +53,7 @@ mark = '    private void shareReport() {'
 assert mark in src, "Method insertion anchor missing"
 insert = '''    private boolean isAutomaticPermission(String permission) {
         try {
-            android.content.pm.PermissionInfo pi;
-            if (Build.VERSION.SDK_INT >= 33) {
-                pi = getPackageManager().getPermissionInfo(permission,
-                        PackageManager.PermissionInfoFlags.of(0));
-            } else {
-                pi = getPackageManager().getPermissionInfo(permission, 0);
-            }
+            android.content.pm.PermissionInfo pi = getPackageManager().getPermissionInfo(permission, 0);
             return (pi.getProtection() & android.content.pm.PermissionInfo.PROTECTION_MASK_BASE)
                     == android.content.pm.PermissionInfo.PROTECTION_NORMAL;
         } catch (Exception ignored) {
