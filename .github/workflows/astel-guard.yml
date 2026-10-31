@@ -5,6 +5,7 @@ on:
     paths:
       - 'astel-guard/source.tar.xz.b64'
       - 'astel-guard/prepare_safe_apk.py'
+      - 'astel-guard/add_restrictions.py'
       - '.github/workflows/astel-guard.yml'
   workflow_dispatch:
 permissions:
@@ -23,6 +24,8 @@ jobs:
           ! grep -q 'android.permission.INTERNET' AstelGuard/app/src/main/AndroidManifest.xml
       - name: Prepare Play Protect compatible audit build
         run: python3 astel-guard/prepare_safe_apk.py
+      - name: Add permission-restriction controls
+        run: python3 astel-guard/add_restrictions.py
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
