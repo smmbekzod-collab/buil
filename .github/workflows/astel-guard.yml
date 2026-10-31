@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'astel-guard/source.tar.xz.b64'
+      - 'astel-guard/prepare_safe_apk.py'
       - '.github/workflows/astel-guard.yml'
   workflow_dispatch:
 permissions:
@@ -20,6 +21,8 @@ jobs:
           base64 --decode astel-guard/source.tar.xz.b64 | tar -xJf -
           test -f AstelGuard/app/build.gradle
           ! grep -q 'android.permission.INTERNET' AstelGuard/app/src/main/AndroidManifest.xml
+      - name: Prepare Play Protect compatible audit build
+        run: python3 astel-guard/prepare_safe_apk.py
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
