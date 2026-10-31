@@ -1,0 +1,62 @@
+name: Astel Guard - Build and Publish APK
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'astel-guard/source.tar.xz.b64'
+      - '.github/workflows/astel-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout build repository
+        uses: actions/checkout@v4
+      - name: Extract standalone Android project
+        run: |
+          base64 --decode astel-guard/source.tar.xz.b64 | tar -xJf -
+          test -f AstelGuard/app/build.gradle
+          ! grep -q 'android.permission.INTERNET' AstelGuard/app/src/main/AndroidManifest.xml
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android SDK 35
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Compile and sign installable debug APK
+        working-directory: AstelGuard
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify APK and hash
+        run: |
+          test -s AstelGuard/app/build/outputs/apk/debug/app-debug.apk
+          mkdir -p astel-guard/download
+          cp AstelGuard/app/build/outputs/apk/debug/app-debug.apk astel-guard/download/AstelGuard.apk
+          cd astel-guard/download
+          sha256sum AstelGuard.apk > SHA256SUMS.txt
+      - name: Publish APK to repository for direct download
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add astel-guard/download/AstelGuard.apk astel-guard/download/SHA256SUMS.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish installable Astel Guard APK [skip ci]"
+            git push
+          fi
+      - name: Keep APK in Actions as a fallback
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: AstelGuard-installable-APK
+          path: AstelGuard/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+          retention-days: 30
