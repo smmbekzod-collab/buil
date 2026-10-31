@@ -10,7 +10,7 @@ base = Path("AstelGuard/app/src/main")
 manifest_path = base / "AndroidManifest.xml"
 manifest = manifest_path.read_text(encoding="utf-8")
 manifest, n = re.subn(
-    r'\s*<service\s+android:name="\.GuardWindowMonitor"\b[\s\S]*?</service>',
+    r'\s*<service\s+android:name="\.GuardWindowMonitor"[\s\S]*?</service>',
     "", manifest, count=1,
 )
 if n != 1:
